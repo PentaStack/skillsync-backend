@@ -1,4 +1,4 @@
-package com.pentastack.skillsync_backend;
+package com.pentastack.skillsync;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
