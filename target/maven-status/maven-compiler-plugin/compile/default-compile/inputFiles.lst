@@ -1,4 +1,5 @@
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/SkillsyncBackendApplication.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/config/SecurityConfig.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/AuthResponse.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/LoginRequest.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/RegisterRequest.java
@@ -10,3 +11,7 @@
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/repository/MentorProfileRepository.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/repository/StudentProfileRepository.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/repository/UserRepository.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/CustomUserDetailsService.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/JwtAuthenticationFilter.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/JwtTokenProvider.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/UserPrincipal.java
