@@ -27,4 +27,9 @@ public class RegisterRequest {
 
     @NotNull(message = "Role is required")
     private Role role;
+
+    // Optional mentor-specific profile fields
+    private String title;
+    private java.math.BigDecimal hourlyRate;
+    private String bio;
 }

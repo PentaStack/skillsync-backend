@@ -70,6 +70,9 @@ public class AuthController {
             MentorProfile mentorProfile = MentorProfile.builder()
                     .name(registerRequest.getName())
                     .user(savedUser)
+                    .title(registerRequest.getTitle())
+                    .hourlyRate(registerRequest.getHourlyRate())
+                    .bio(registerRequest.getBio())
                     .build();
             mentorProfileRepository.save(mentorProfile);
             savedUser.setMentorProfile(mentorProfile);

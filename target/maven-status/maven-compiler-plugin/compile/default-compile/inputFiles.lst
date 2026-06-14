@@ -19,3 +19,4 @@
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/JwtAuthenticationFilter.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/JwtTokenProvider.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/security/UserPrincipal.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/seeder/DatabaseSeeder.java

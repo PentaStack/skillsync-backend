@@ -17,6 +17,7 @@ com/pentastack/skillsync/dto/LoginRequest.class
 com/pentastack/skillsync/security/UserPrincipal.class
 com/pentastack/skillsync/repository/MentorProfileRepository.class
 com/pentastack/skillsync/dto/UserResponse.class
+com/pentastack/skillsync/seeder/DatabaseSeeder.class
 com/pentastack/skillsync/model/MentorProfile.class
 com/pentastack/skillsync/model/User.class
 com/pentastack/skillsync/model/User$UserBuilder.class
