@@ -1,9 +1,12 @@
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/SkillsyncBackendApplication.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/config/SecurityConfig.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/ApiErrorResponse.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/AuthResponse.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/LoginRequest.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/RegisterRequest.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/dto/UserResponse.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/exception/ApiException.java
+/home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/exception/GlobalExceptionHandler.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/model/MentorProfile.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/model/Role.java
 /home/mohamed-hamdy/Hamdy/ITI/8th Month/spring-react-project/skillsync-backend/src/main/java/com/pentastack/skillsync/model/StudentProfile.java
