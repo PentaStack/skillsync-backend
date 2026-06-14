@@ -1,0 +1,11 @@
+com/pentastack/skillsync/model/User$UserBuilder.class
+com/pentastack/skillsync/model/Role.class
+com/pentastack/skillsync/SkillsyncBackendApplication.class
+com/pentastack/skillsync/model/MentorProfile$MentorProfileBuilder.class
+com/pentastack/skillsync/repository/StudentProfileRepository.class
+com/pentastack/skillsync/repository/MentorProfileRepository.class
+com/pentastack/skillsync/repository/UserRepository.class
+com/pentastack/skillsync/model/MentorProfile.class
+com/pentastack/skillsync/model/StudentProfile.class
+com/pentastack/skillsync/model/User.class
+com/pentastack/skillsync/model/StudentProfile$StudentProfileBuilder.class
