@@ -11,9 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
 
-@Getter
 @Entity
 @Table(name = "session_audit_logs")
 public class SessionAuditLog {
@@ -51,4 +49,11 @@ public class SessionAuditLog {
         this.latencyMs = latencyMs;
     }
 
+    public Long getId() { return id; }
+    public ReviewSession getSession() { return session; }
+    public String getPredictedTag() { return predictedTag; }
+    public Double getConfidenceScore() { return confidenceScore; }
+    public AuditStatus getStatus() { return status; }
+    public String getErrorMessage() { return errorMessage; }
+    public Long getLatencyMs() { return latencyMs; }
 }

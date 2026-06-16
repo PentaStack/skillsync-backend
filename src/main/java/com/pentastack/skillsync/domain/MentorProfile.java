@@ -1,20 +1,12 @@
 package com.pentastack.skillsync.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import lombok.Getter;
-
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-@Getter
-@Entity
+@Entity(name = "DomainMentorProfile")
+@Table(name = "domain_mentor_profiles")
 public class MentorProfile {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,28 +14,32 @@ public class MentorProfile {
     @OneToOne
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stack_id")
+    @ManyToOne
     private Stack stack;
 
-    private String name;
+    private String displayName;
     private String title;
     private String bio;
-    private boolean verified;
-    private Double averageRating;
+    private boolean available;
+    private Double rating;
     private BigDecimal hourlyRate;
 
     protected MentorProfile() {}
 
-    public MentorProfile(User user, Stack stack, String name, String title, String bio, boolean verified, Double averageRating, BigDecimal hourlyRate) {
+    public MentorProfile(User user, Stack stack, String displayName, String title, String bio, boolean available, Double rating, BigDecimal hourlyRate) {
         this.user = user;
         this.stack = stack;
-        this.name = name;
+        this.displayName = displayName;
         this.title = title;
         this.bio = bio;
-        this.verified = verified;
-        this.averageRating = averageRating;
+        this.available = available;
+        this.rating = rating;
         this.hourlyRate = hourlyRate;
     }
 
+    public Long getId() { return id; }
+    public User getUser() { return user; }
+    public Stack getStack() { return stack; }
+    public String getDisplayName() { return displayName; }
+    public String getName() { return displayName; }
 }

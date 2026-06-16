@@ -1,7 +1,7 @@
 package com.pentastack.skillsync.security;
 
 import com.pentastack.skillsync.model.User;
-import com.pentastack.skillsync.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    @org.springframework.beans.factory.annotation.Qualifier("modelUserRepository")
     private final UserRepository userRepository;
 
     @Override

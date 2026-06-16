@@ -1,9 +1,7 @@
 package com.pentastack.skillsync.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
 
-@Getter
 @Entity
 public class Stack {
 
@@ -21,5 +19,7 @@ public class Stack {
         this.description = description;
     }
 
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
 }
-

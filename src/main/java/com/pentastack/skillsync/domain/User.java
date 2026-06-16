@@ -1,11 +1,9 @@
 package com.pentastack.skillsync.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
 
-@Getter
-@Entity
-@Table(name = "users")
+@Entity(name = "DomainUser")
+@Table(name = "domain_users")
 public class User {
 
     @Id
@@ -34,4 +32,8 @@ public class User {
         return new User(email, passwordHash, role);
     }
 
+    public Long getId() { return id; }
+    public String getEmail() { return email; }
+    public String getPasswordHash() { return passwordHash; }
+    public Role getRole() { return role; }
 }

@@ -9,9 +9,9 @@ import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.model.StudentProfile;
 import com.pentastack.skillsync.model.User;
-import com.pentastack.skillsync.repository.MentorProfileRepository;
-import com.pentastack.skillsync.repository.StudentProfileRepository;
-import com.pentastack.skillsync.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.repository.StudentProfileRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import com.pentastack.skillsync.security.JwtTokenProvider;
 import com.pentastack.skillsync.security.UserPrincipal;
 import jakarta.validation.Valid;
@@ -32,8 +32,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    @org.springframework.beans.factory.annotation.Qualifier("modelUserRepository")
     private final UserRepository userRepository;
+    @org.springframework.beans.factory.annotation.Qualifier("modelStudentProfileRepository")
     private final StudentProfileRepository studentProfileRepository;
+    @org.springframework.beans.factory.annotation.Qualifier("modelMentorProfileRepository")
     private final MentorProfileRepository mentorProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;

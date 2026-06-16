@@ -1,9 +1,10 @@
-package com.pentastack.skillsync.repository;
+package com.pentastack.skillsync.model.repository;
 
 import com.pentastack.skillsync.model.MentorProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
+@Repository("modelMentorProfileRepository")
 public interface MentorProfileRepository extends JpaRepository<MentorProfile, Long> {
 }
+

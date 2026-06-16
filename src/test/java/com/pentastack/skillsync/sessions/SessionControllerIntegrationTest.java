@@ -67,14 +67,27 @@ class SessionControllerIntegrationTest {
     private SessionAuditLogRepository sessionAuditLogRepository;
 
     @org.springframework.beans.factory.annotation.Autowired
-    private SessionAuditClassifier auditClassifier;
+    private FakeSessionAuditClassifier auditClassifier;
 
     @TestConfiguration
     static class TestConfig {
         @Bean
         @Primary
-        public SessionAuditClassifier auditClassifier() {
-            return org.mockito.Mockito.mock(SessionAuditClassifier.class);
+        public FakeSessionAuditClassifier auditClassifier() {
+            return new FakeSessionAuditClassifier();
+        }
+    }
+
+    static class FakeSessionAuditClassifier implements SessionAuditClassifier {
+        private AuditClassificationResult nextResult = AuditClassificationResult.success("GENERAL", 0.5, 1);
+
+        void returnNext(AuditClassificationResult nextResult) {
+            this.nextResult = nextResult;
+        }
+
+        @Override
+        public AuditClassificationResult classify(String submissionDescription) {
+            return nextResult;
         }
     }
 
@@ -117,8 +130,7 @@ class SessionControllerIntegrationTest {
     @Test
     void studentBooksSessionAndReceivesSuccessfulAuditLog() throws Exception {
         AuditClassificationResult auditResult = AuditClassificationResult.success("ASYNC_RACE", 0.91, 37);
-        org.mockito.Mockito.when(auditClassifier.classify(org.mockito.ArgumentMatchers.anyString()))
-            .thenReturn(auditResult);
+        auditClassifier.returnNext(auditResult);
 
         mockMvc.perform(post("/api/sessions")
                 .with(user("student@skillsync.dev").roles("STUDENT"))
@@ -147,8 +159,7 @@ class SessionControllerIntegrationTest {
 
     @Test
     void overlappingBookingForSameMentorIsRejected() throws Exception {
-        org.mockito.Mockito.when(auditClassifier.classify(org.mockito.ArgumentMatchers.anyString()))
-            .thenReturn(AuditClassificationResult.success("REACT_STATE", 0.82, 21));
+        auditClassifier.returnNext(AuditClassificationResult.success("REACT_STATE", 0.82, 21));
 
         bookAsStudent("student@skillsync.dev", firstSlot, "First review");
 
@@ -166,8 +177,7 @@ class SessionControllerIntegrationTest {
 
     @Test
     void classifierFailureIsStoredAsFailedAuditTelemetry() throws Exception {
-        org.mockito.Mockito.when(auditClassifier.classify(org.mockito.ArgumentMatchers.anyString()))
-            .thenReturn(AuditClassificationResult.failed("classifier unavailable", 112));
+        auditClassifier.returnNext(AuditClassificationResult.failed("classifier unavailable", 112));
 
         long sessionId = bookAsStudent("student@skillsync.dev", firstSlot, "Please inspect this flaky test");
 
@@ -181,8 +191,7 @@ class SessionControllerIntegrationTest {
 
     @Test
     void studentOnlySeesOwnSessionsAndCannotReadAnotherAuditLog() throws Exception {
-        org.mockito.Mockito.when(auditClassifier.classify(org.mockito.ArgumentMatchers.anyString()))
-            .thenReturn(AuditClassificationResult.success("SYSTEM_DESIGN", 0.77, 19));
+        auditClassifier.returnNext(AuditClassificationResult.success("SYSTEM_DESIGN", 0.77, 19));
 
         long studentSessionId = bookAsStudent("student@skillsync.dev", firstSlot, "Student review");
         long otherSessionId = bookAsStudent("other@skillsync.dev", firstSlot.plusHours(2), "Other review");
@@ -200,8 +209,7 @@ class SessionControllerIntegrationTest {
 
     @Test
     void mentorCompletesOwnSessionWithEvaluationNotes() throws Exception {
-        org.mockito.Mockito.when(auditClassifier.classify(org.mockito.ArgumentMatchers.anyString()))
-            .thenReturn(AuditClassificationResult.success("CODE_REVIEW", 0.86, 24));
+        auditClassifier.returnNext(AuditClassificationResult.success("CODE_REVIEW", 0.86, 24));
 
         long sessionId = bookAsStudent("student@skillsync.dev", firstSlot, "Review my PR");
 
@@ -219,8 +227,7 @@ class SessionControllerIntegrationTest {
 
     @Test
     void studentCanCancelAndRescheduleOwnScheduledSession() throws Exception {
-        org.mockito.Mockito.when(auditClassifier.classify(org.mockito.ArgumentMatchers.anyString()))
-            .thenReturn(AuditClassificationResult.success("API_DESIGN", 0.8, 28));
+        auditClassifier.returnNext(AuditClassificationResult.success("API_DESIGN", 0.8, 28));
 
         long cancelId = bookAsStudent("student@skillsync.dev", firstSlot, "Cancel this review");
 

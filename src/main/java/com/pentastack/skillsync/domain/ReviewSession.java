@@ -12,11 +12,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
 
-@Getter
 @Entity
 @Table(name = "review_sessions")
 public class ReviewSession {
@@ -62,16 +59,24 @@ public class ReviewSession {
         this.status = SessionStatus.SCHEDULED;
     }
 
+    public Long getId() { return id; }
+    public MentorProfile getMentor() { return mentor; }
+    public StudentProfile getStudent() { return student; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public String getDescription() { return description; }
+    public SessionStatus getStatus() { return status; }
+    public String getEvaluationNotes() { return evaluationNotes; }
+    public SessionAuditLog getAuditLog() { return auditLog; }
+
     public void cancel() { this.status = SessionStatus.CANCELED; }
     public void complete(String notes) {
         this.status = SessionStatus.COMPLETED;
         this.evaluationNotes = notes;
     }
-    public void updateDescription(String description) {
-        this.description = description;
-    }
     public void reschedule(LocalDateTime startTime) {
         this.startTime = startTime;
         this.endTime = startTime.plusMinutes(45);
     }
+    public void updateDescription(String description) { this.description = description; }
 }

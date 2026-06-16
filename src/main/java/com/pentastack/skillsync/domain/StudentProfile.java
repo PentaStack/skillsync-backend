@@ -1,29 +1,29 @@
 package com.pentastack.skillsync.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import lombok.Getter;
+import jakarta.persistence.*;
 
-@Getter
-@Entity
+@Entity(name = "DomainStudentProfile")
+@Table(name = "domain_student_profiles")
 public class StudentProfile {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @OneToOne
-    private User user;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String name;
+	@OneToOne
+	private User user;
 
-    protected StudentProfile() {}
+	private String displayName;
 
-    public StudentProfile(User user, String name) {
-        this.user = user;
-        this.name = name;
-    }
+	protected StudentProfile() {}
 
+	public StudentProfile(User user, String displayName) {
+		this.user = user;
+		this.displayName = displayName;
+	}
+
+	public Long getId() { return id; }
+	public User getUser() { return user; }
+	public String getDisplayName() { return displayName; }
+	public String getName() { return displayName; }
 }

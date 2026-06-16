@@ -1,7 +1,7 @@
 package com.pentastack.skillsync.seeder;
 
 import com.pentastack.skillsync.model.*;
-import com.pentastack.skillsync.repository.*;
+import com.pentastack.skillsync.model.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -16,8 +16,11 @@ import java.math.BigDecimal;
 @Slf4j
 public class DatabaseSeeder implements CommandLineRunner {
 
+    @org.springframework.beans.factory.annotation.Qualifier("modelUserRepository")
     private final UserRepository userRepository;
+    @org.springframework.beans.factory.annotation.Qualifier("modelStudentProfileRepository")
     private final StudentProfileRepository studentProfileRepository;
+    @org.springframework.beans.factory.annotation.Qualifier("modelMentorProfileRepository")
     private final MentorProfileRepository mentorProfileRepository;
     private final PasswordEncoder passwordEncoder;
 
