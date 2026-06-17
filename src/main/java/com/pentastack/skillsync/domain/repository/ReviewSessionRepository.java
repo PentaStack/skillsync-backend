@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ReviewSessionRepository extends JpaRepository<ReviewSession, Long> {
     @EntityGraph(attributePaths = {"mentor", "mentor.user", "mentor.stack", "student", "student.user", "auditLog"})
@@ -28,4 +29,16 @@ public interface ReviewSessionRepository extends JpaRepository<ReviewSession, Lo
     );
 
     long countByMentor_Id(Long mentorId);
+
+    @EntityGraph(attributePaths = {"mentor", "mentor.user", "mentor.stack", "student", "student.user", "auditLog"})
+    List<ReviewSession> findByStudent_User_IdOrderByStartTimeDesc(Long userId);
+
+    @EntityGraph(attributePaths = {"mentor", "mentor.user", "mentor.stack", "student", "student.user", "auditLog"})
+    List<ReviewSession> findByMentor_IdOrderByStartTimeDesc(Long mentorId);
+
+    @Query("SELECT s.mentor.id, COUNT(s) FROM ReviewSession s GROUP BY s.mentor.id")
+    List<Object[]> countSessionsGroupedByMentorId();
+
+    @Query("SELECT s.student.user.id, COUNT(s) FROM ReviewSession s GROUP BY s.student.user.id")
+    List<Object[]> countSessionsGroupedByStudentUserId();
 }
