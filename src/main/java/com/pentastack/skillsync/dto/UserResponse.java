@@ -27,6 +27,7 @@ public class UserResponse {
             return null;
         }
 
+        String resolvedName = null;
         Long resolvedProfileId = null;
         if (user.getRole() == Role.STUDENT && user.getStudentProfile() != null) {
             resolvedName = user.getStudentProfile().getName();
