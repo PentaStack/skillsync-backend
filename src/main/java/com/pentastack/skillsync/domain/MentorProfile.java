@@ -47,4 +47,16 @@ public class MentorProfile {
     public String getName() { return displayName; }
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }
+    public String getTitle() { return title; }
+    public String getBio() { return bio; }
+    public boolean isAvailable() { return available; }
+    public Double getRating() { return rating; }
+    public BigDecimal getHourlyRate() { return hourlyRate; }
+
+    public void updateProfile(String title, String bio, BigDecimal hourlyRate, boolean available) {
+        this.title = title;
+        this.bio = bio;
+        this.hourlyRate = hourlyRate;
+        this.available = available;
+    }
 }
