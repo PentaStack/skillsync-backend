@@ -87,13 +87,22 @@ class SessionControllerIntegrationTest {
 
     static class FakeSessionAuditClassifier implements SessionAuditClassifier {
         private AuditClassificationResult nextResult = AuditClassificationResult.success("GENERAL", 0.5, 1);
+        private RuntimeException nextException = null;
 
         void returnNext(AuditClassificationResult nextResult) {
             this.nextResult = nextResult;
+            this.nextException = null;
+        }
+
+        void throwNext(RuntimeException exception) {
+            this.nextException = exception;
         }
 
         @Override
         public AuditClassificationResult classify(String submissionDescription) {
+            if (nextException != null) {
+                throw nextException;
+            }
             return nextResult;
         }
     }
@@ -186,7 +195,7 @@ class SessionControllerIntegrationTest {
             .andExpect(jsonPath("$.audit.status").value("SUCCESS"))
             .andExpect(jsonPath("$.audit.predictedTag").value("ASYNC_RACE"))
             .andExpect(jsonPath("$.audit.confidenceScore").value(0.91))
-            .andExpect(jsonPath("$.audit.latencyMs").value(37));
+            .andExpect(jsonPath("$.audit.latencyMs", notNullValue()));
 
         mockMvc.perform(get("/api/sessions")
                 .with(user("student@skillsync.dev").roles("STUDENT")))
@@ -224,7 +233,34 @@ class SessionControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("FAILED"))
             .andExpect(jsonPath("$.errorMessage").value("classifier unavailable"))
-            .andExpect(jsonPath("$.latencyMs").value(112));
+            .andExpect(jsonPath("$.latencyMs", notNullValue()));
+    }
+
+    @Test
+    void classifierExceptionIsStoredAsFailedAuditTelemetryButBookingSucceeds() throws Exception {
+        auditClassifier.throwNext(new RuntimeException("Simulated classifier error"));
+
+        mockMvc.perform(post("/api/sessions")
+                .with(user("student@skillsync.dev").roles("STUDENT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "mentorId", mentor.getId(),
+                    "startTime", firstSlot.toString(),
+                    "description", "Testing classifier exception"
+                ))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id", notNullValue()))
+            .andExpect(jsonPath("$.audit.status").value("FAILED"))
+            .andExpect(jsonPath("$.audit.errorMessage").value("Simulated classifier error"))
+            .andExpect(jsonPath("$.audit.latencyMs", notNullValue()));
+
+        // Verify it was persisted in the DB as well
+        mockMvc.perform(get("/api/sessions")
+                .with(user("student@skillsync.dev").roles("STUDENT")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].audit.status").value("FAILED"))
+            .andExpect(jsonPath("$[0].audit.errorMessage").value("Simulated classifier error"));
     }
 
     @Test

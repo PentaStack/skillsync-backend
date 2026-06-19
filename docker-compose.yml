@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: skillsync
       POSTGRES_USER: skillsync_user
-      POSTGRES_PASSWORD: skillsync123
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -26,8 +26,8 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/skillsync
       SPRING_DATASOURCE_USERNAME: skillsync_user
-      SPRING_DATASOURCE_PASSWORD: skillsync123
-      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       APP_JWT_EXPIRATION: 86400000
     depends_on:
       postgres:
