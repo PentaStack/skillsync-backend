@@ -3,6 +3,7 @@ package com.pentastack.skillsync.controller;
 import com.pentastack.skillsync.dto.AuthResponse;
 import com.pentastack.skillsync.dto.LoginRequest;
 import com.pentastack.skillsync.dto.RegisterRequest;
+import com.pentastack.skillsync.dto.UpdateProfileRequest;
 import com.pentastack.skillsync.dto.UserResponse;
 import com.pentastack.skillsync.exception.ApiException;
 import com.pentastack.skillsync.model.MentorProfile;
@@ -146,5 +147,38 @@ public class AuthController {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
 
         return ResponseEntity.ok(UserResponse.fromUser(user));
+    }
+
+    @PutMapping("/profile")
+    @Transactional
+    public ResponseEntity<UserResponse> updateProfile(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody UpdateProfileRequest request
+    ) {
+        if (userPrincipal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userRepository.findByEmail(userPrincipal.getEmail())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() == Role.STUDENT && user.getStudentProfile() != null) {
+            StudentProfile profile = studentProfileRepository.findById(user.getStudentProfile().getId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Student profile not found"));
+            profile.setName(request.getName());
+            studentProfileRepository.save(profile);
+        } else if (user.getRole() == Role.MENTOR && user.getMentorProfile() != null) {
+            MentorProfile profile = mentorProfileRepository.findById(user.getMentorProfile().getId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Mentor profile not found"));
+            profile.setName(request.getName());
+            mentorProfileRepository.save(profile);
+        } else {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Profile update not supported for this role");
+        }
+
+        User updatedUser = userRepository.findByEmail(userPrincipal.getEmail())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        return ResponseEntity.ok(UserResponse.fromUser(updatedUser));
     }
 }
