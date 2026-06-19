@@ -28,13 +28,6 @@ public interface ReviewSessionRepository extends JpaRepository<ReviewSession, Lo
         LocalDateTime startTime
     );
 
-    List<ReviewSession> findByMentor_IdAndStatusAndStartTimeBetween(
-        Long mentorId,
-        com.pentastack.skillsync.domain.SessionStatus status,
-        LocalDateTime from,
-        LocalDateTime to
-    );
-
     long countByMentor_Id(Long mentorId);
 
     @EntityGraph(attributePaths = {"mentor", "mentor.user", "mentor.stack", "student", "student.user", "auditLog"})

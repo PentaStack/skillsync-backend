@@ -12,7 +12,7 @@ public class MentorProfile {
     private Long id;
 
     @OneToOne
-    private com.pentastack.skillsync.model.User user;
+    private User user;
 
     @ManyToOne
     private Stack stack;
@@ -24,12 +24,9 @@ public class MentorProfile {
     private Double rating;
     private BigDecimal hourlyRate;
 
-    @Column(name = "is_verified", nullable = false)
-    private boolean verified = false;
-
     protected MentorProfile() {}
 
-    public MentorProfile(com.pentastack.skillsync.model.User user, Stack stack, String displayName, String title, String bio, boolean available, Double rating, BigDecimal hourlyRate) {
+    public MentorProfile(User user, Stack stack, String displayName, String title, String bio, boolean available, Double rating, BigDecimal hourlyRate) {
         this.user = user;
         this.stack = stack;
         this.displayName = displayName;
@@ -41,12 +38,10 @@ public class MentorProfile {
     }
 
     public Long getId() { return id; }
-    public com.pentastack.skillsync.model.User getUser() { return user; }
+    public User getUser() { return user; }
     public Stack getStack() { return stack; }
     public String getDisplayName() { return displayName; }
     public String getName() { return displayName; }
-    public boolean isVerified() { return verified; }
-    public void setVerified(boolean verified) { this.verified = verified; }
     public String getTitle() { return title; }
     public String getBio() { return bio; }
     public boolean isAvailable() { return available; }

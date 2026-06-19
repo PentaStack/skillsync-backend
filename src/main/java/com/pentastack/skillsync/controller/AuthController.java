@@ -5,11 +5,11 @@ import com.pentastack.skillsync.dto.LoginRequest;
 import com.pentastack.skillsync.dto.RegisterRequest;
 import com.pentastack.skillsync.dto.UserResponse;
 import com.pentastack.skillsync.exception.ApiException;
-import com.pentastack.skillsync.domain.MentorProfile;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.model.StudentProfile;
 import com.pentastack.skillsync.model.User;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.model.repository.StudentProfileRepository;
 import com.pentastack.skillsync.model.repository.UserRepository;
 import com.pentastack.skillsync.security.JwtTokenProvider;
@@ -36,6 +36,7 @@ public class AuthController {
     private final UserRepository userRepository;
     @org.springframework.beans.factory.annotation.Qualifier("modelStudentProfileRepository")
     private final StudentProfileRepository studentProfileRepository;
+    @org.springframework.beans.factory.annotation.Qualifier("modelMentorProfileRepository")
     private final MentorProfileRepository mentorProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -69,13 +70,13 @@ public class AuthController {
             studentProfileRepository.save(studentProfile);
             savedUser.setStudentProfile(studentProfile);
         } else if (registerRequest.getRole() == Role.MENTOR) {
-            MentorProfile mentorProfile = new MentorProfile(
-                    savedUser, null,
-                    registerRequest.getName(),
-                    registerRequest.getTitle(),
-                    registerRequest.getBio(),
-                    true, 0.0,
-                    registerRequest.getHourlyRate());
+            MentorProfile mentorProfile = MentorProfile.builder()
+                    .name(registerRequest.getName())
+                    .user(savedUser)
+                    .title(registerRequest.getTitle())
+                    .hourlyRate(registerRequest.getHourlyRate())
+                    .bio(registerRequest.getBio())
+                    .build();
             mentorProfileRepository.save(mentorProfile);
             savedUser.setMentorProfile(mentorProfile);
         }

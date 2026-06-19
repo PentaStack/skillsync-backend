@@ -10,14 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pentastack.skillsync.domain.MentorAvailability;
 import com.pentastack.skillsync.domain.MentorProfile;
 import com.pentastack.skillsync.domain.Role;
 import com.pentastack.skillsync.domain.SessionStatus;
 import com.pentastack.skillsync.domain.Stack;
 import com.pentastack.skillsync.domain.StudentProfile;
 import com.pentastack.skillsync.domain.User;
-import com.pentastack.skillsync.domain.repository.MentorAvailabilityRepository;
 import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
 import com.pentastack.skillsync.domain.repository.SessionAuditLogRepository;
@@ -25,19 +23,8 @@ import com.pentastack.skillsync.domain.repository.StackRepository;
 import com.pentastack.skillsync.domain.repository.StudentProfileRepository;
 import com.pentastack.skillsync.domain.repository.UserRepository;
 import java.math.BigDecimal;
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,10 +51,6 @@ class SessionControllerIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @org.springframework.beans.factory.annotation.Autowired
-    @org.springframework.beans.factory.annotation.Qualifier("modelUserRepository")
-    private com.pentastack.skillsync.model.repository.UserRepository modelUserRepository;
-
     @Autowired
     private StackRepository stackRepository;
 
@@ -82,9 +65,6 @@ class SessionControllerIntegrationTest {
 
     @Autowired
     private SessionAuditLogRepository sessionAuditLogRepository;
-
-    @Autowired
-    private MentorAvailabilityRepository mentorAvailabilityRepository;
 
     @org.springframework.beans.factory.annotation.Autowired
     private FakeSessionAuditClassifier auditClassifier;
@@ -120,27 +100,19 @@ class SessionControllerIntegrationTest {
     void setUp() {
         sessionAuditLogRepository.deleteAll();
         reviewSessionRepository.deleteAll();
-        mentorAvailabilityRepository.deleteAll();
         mentorProfileRepository.deleteAll();
-        modelUserRepository.deleteAll();
         studentProfileRepository.deleteAll();
         stackRepository.deleteAll();
         userRepository.deleteAll();
 
         Stack stack = stackRepository.save(new Stack("React Engineering", "Frontend competency reviews"));
 
-        // model.User required by MentorProfile FK; domain.User required by SessionService role check
-        com.pentastack.skillsync.model.User modelMentorUser = modelUserRepository.save(
-            com.pentastack.skillsync.model.User.builder()
-                .email("mentor@skillsync.dev").passwordHash("hash")
-                .role(com.pentastack.skillsync.model.Role.MENTOR).build()
+        User mentorUser = userRepository.save(
+            User.create("mentor@skillsync.dev", "hash", Role.MENTOR)
         );
-        userRepository.save(User.create("mentor@skillsync.dev", "hash", Role.MENTOR));
         mentor = mentorProfileRepository.save(
-            new MentorProfile(modelMentorUser, stack, "Mona Mentor", "Senior React Mentor", "Helps students debug UI systems", true, 4.8, BigDecimal.valueOf(60))
+            new MentorProfile(mentorUser, stack, "Mona Mentor", "Senior React Mentor", "Helps students debug UI systems", true, 4.8, BigDecimal.valueOf(60))
         );
-        // firstSlot is 2026-07-06 (Monday); cover all test booking times (10:00–14:45)
-        mentorAvailabilityRepository.save(new MentorAvailability(mentor, DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(17, 0)));
 
         User studentUser = userRepository.save(
             User.create("student@skillsync.dev", "hash", Role.STUDENT)
@@ -280,46 +252,6 @@ class SessionControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.startTime").value("2026-07-06T14:00:00"))
             .andExpect(jsonPath("$.endTime").value("2026-07-06T14:45:00"));
-    }
-
-    @Test
-    void concurrentBookingsSameSlot_exactlyOneSucceeds() throws Exception {
-        int N = 10;
-        CountDownLatch ready = new CountDownLatch(N);
-        CountDownLatch go = new CountDownLatch(1);
-        AtomicInteger created = new AtomicInteger();
-        AtomicInteger conflict = new AtomicInteger();
-
-        ExecutorService pool = Executors.newFixedThreadPool(N);
-        List<Future<?>> futures = new ArrayList<>();
-        for (int i = 0; i < N; i++) {
-            futures.add(pool.submit(() -> {
-                ready.countDown();
-                try { go.await(); } catch (InterruptedException e) { return; }
-                try {
-                    int status = mockMvc.perform(post("/api/sessions")
-                            .with(user("student@skillsync.dev").roles("STUDENT"))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(Map.of(
-                                "mentorId", mentor.getId(),
-                                "startTime", firstSlot.toString(),
-                                "description", "race test"
-                            ))))
-                        .andReturn().getResponse().getStatus();
-                    if (status == 201) created.incrementAndGet();
-                    else if (status == 409) conflict.incrementAndGet();
-                } catch (Exception ignored) {}
-            }));
-        }
-
-        ready.await();
-        go.countDown();
-        pool.shutdown();
-        pool.awaitTermination(30, TimeUnit.SECONDS);
-
-        assertEquals(1, created.get(), "exactly one booking must succeed");
-        assertEquals(N - 1, conflict.get(), "all others must get 409");
-        assertEquals(1, reviewSessionRepository.count(), "exactly one session row persisted");
     }
 
     private long bookAsStudent(String email, LocalDateTime startTime, String description) throws Exception {

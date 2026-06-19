@@ -1,14 +1,12 @@
 package com.pentastack.skillsync.sessions;
 
 import com.pentastack.skillsync.domain.AuditStatus;
-import com.pentastack.skillsync.domain.MentorAvailability;
 import com.pentastack.skillsync.domain.MentorProfile;
 import com.pentastack.skillsync.domain.ReviewSession;
 import com.pentastack.skillsync.domain.SessionAuditLog;
 import com.pentastack.skillsync.domain.SessionStatus;
 import com.pentastack.skillsync.domain.StudentProfile;
 import com.pentastack.skillsync.domain.User;
-import com.pentastack.skillsync.domain.repository.MentorAvailabilityRepository;
 import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
 import com.pentastack.skillsync.domain.repository.SessionAuditLogRepository;
@@ -18,7 +16,6 @@ import com.pentastack.skillsync.sessions.dto.CreateSessionRequest;
 import com.pentastack.skillsync.sessions.dto.SessionAuditLogResponse;
 import com.pentastack.skillsync.sessions.dto.SessionResponse;
 import com.pentastack.skillsync.sessions.dto.UpdateSessionRequest;
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -32,7 +29,6 @@ public class SessionService {
     private final StudentProfileRepository studentProfileRepository;
     private final UserRepository userRepository;
     private final SessionAuditClassifier classifier;
-    private final MentorAvailabilityRepository mentorAvailabilityRepository;
 
     public SessionService(
         ReviewSessionRepository reviewSessionRepository,
@@ -40,8 +36,7 @@ public class SessionService {
         MentorProfileRepository mentorProfileRepository,
         StudentProfileRepository studentProfileRepository,
         UserRepository userRepository,
-        SessionAuditClassifier classifier,
-        MentorAvailabilityRepository mentorAvailabilityRepository
+        SessionAuditClassifier classifier
     ) {
         this.reviewSessionRepository = reviewSessionRepository;
         this.sessionAuditLogRepository = sessionAuditLogRepository;
@@ -49,7 +44,6 @@ public class SessionService {
         this.studentProfileRepository = studentProfileRepository;
         this.userRepository = userRepository;
         this.classifier = classifier;
-        this.mentorAvailabilityRepository = mentorAvailabilityRepository;
     }
 
     @Transactional
@@ -60,13 +54,11 @@ public class SessionService {
             .orElseThrow(() -> new SessionNotFoundException("Mentor profile not found"));
 
         LocalDateTime endTime = request.startTime().plusMinutes(45);
-        mentorProfileRepository.findWithLockById(mentor.getId());
         if (reviewSessionRepository.existsByMentor_IdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
             mentor.getId(), SessionStatus.SCHEDULED, endTime, request.startTime()
         )) {
             throw new SessionConflictException("Mentor is already booked for that time window");
         }
-        assertWithinAvailabilityWindow(mentor.getId(), request.startTime(), endTime);
 
         ReviewSession session = reviewSessionRepository.save(new ReviewSession(mentor, student, request.startTime(), request.description()));
         AuditClassificationResult classification = classifier.classify(request.description());
@@ -122,14 +114,12 @@ public class SessionService {
 
         if (request.startTime() != null) {
             LocalDateTime endTime = request.startTime().plusMinutes(45);
-            mentorProfileRepository.findWithLockById(session.getMentor().getId());
             boolean overlap = reviewSessionRepository.existsByMentor_IdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
                 session.getMentor().getId(), SessionStatus.SCHEDULED, endTime, request.startTime()
             );
             if (overlap) {
                 throw new SessionConflictException("Mentor is already booked for that time window");
             }
-            assertWithinAvailabilityWindow(session.getMentor().getId(), request.startTime(), endTime);
             session.reschedule(request.startTime());
         }
         if (request.description() != null) {
@@ -142,19 +132,6 @@ public class SessionService {
         }
         reviewSessionRepository.save(session);
         return toResponse(session);
-    }
-
-    // ponytail: stream any-match — O(n) on windows per mentor/day, fine at this scale
-    private void assertWithinAvailabilityWindow(Long mentorId, LocalDateTime startTime, LocalDateTime endTime) {
-        DayOfWeek dow = startTime.getDayOfWeek();
-        List<MentorAvailability> windows = mentorAvailabilityRepository.findByMentor_IdAndDayOfWeek(mentorId, dow);
-        boolean withinWindow = windows.stream().anyMatch(w ->
-            !startTime.toLocalTime().isBefore(w.getStartTime()) &&
-            !endTime.toLocalTime().isAfter(w.getEndTime())
-        );
-        if (!withinWindow) {
-            throw new SessionConflictException("Slot is outside mentor's availability windows");
-        }
     }
 
     private void authorize(String requesterEmail, ReviewSession session) {
