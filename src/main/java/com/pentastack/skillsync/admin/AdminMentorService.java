@@ -98,10 +98,10 @@ public class AdminMentorService {
     }
 
     @Transactional
-    public void updateLiveVerification(Long id, boolean isVerified) {
+    public void updateLiveVerification(Long id, boolean isAvailable) {
         MentorProfile mentor = mentorProfileRepository.findById(id)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Live mentor not found"));
-        mentor.updateProfile(mentor.getTitle(), mentor.getBio(), mentor.getHourlyRate(), isVerified);
+        mentor.updateProfile(mentor.getTitle(), mentor.getBio(), mentor.getHourlyRate(), isAvailable);
     }
 
     @Transactional(readOnly = true)

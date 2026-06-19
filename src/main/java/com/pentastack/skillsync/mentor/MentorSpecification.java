@@ -22,6 +22,8 @@ public final class MentorSpecification {
             }
 
             List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("available"), true));
+            predicates.add(cb.equal(root.get("isVerified"), true));
 
             if (keyword != null && !keyword.isBlank()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";

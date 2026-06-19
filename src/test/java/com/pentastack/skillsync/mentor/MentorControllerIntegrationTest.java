@@ -71,6 +71,7 @@ class MentorControllerIntegrationTest {
             .title("Senior Java Engineer")
             .bio("Enterprise JVM mentoring")
             .available(true)
+            .isVerified(true)
             .averageRating(4.9)
             .hourlyRate(BigDecimal.valueOf(150))
             .build());
@@ -81,7 +82,8 @@ class MentorControllerIntegrationTest {
             .name("React Mentor")
             .title("Staff Frontend Engineer")
             .bio("React and TypeScript mentoring")
-            .available(false)
+            .available(true)
+            .isVerified(true)
             .averageRating(4.5)
             .hourlyRate(BigDecimal.valueOf(120))
             .build());
@@ -153,5 +155,32 @@ class MentorControllerIntegrationTest {
                 ))))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.user.email").value("new.mentor@skillsync.dev"));
+    }
+
+    @Test
+    void unverifiedOrUnavailableMentorsAreExcludedFromDiscovery() throws Exception {
+        mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("unverified@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(javaStack)
+            .name("Unverified Mentor")
+            .available(true)
+            .isVerified(false)
+            .hourlyRate(BigDecimal.valueOf(100))
+            .build());
+
+        mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("unavailable@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(javaStack)
+            .name("Unavailable Mentor")
+            .available(false)
+            .isVerified(true)
+            .hourlyRate(BigDecimal.valueOf(100))
+            .build());
+
+        mockMvc.perform(get("/api/mentors"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items", hasSize(2)))
+            .andExpect(jsonPath("$.items[?(@.name == 'Unverified Mentor')]").doesNotExist())
+            .andExpect(jsonPath("$.items[?(@.name == 'Unavailable Mentor')]").doesNotExist());
     }
 }
