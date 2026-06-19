@@ -123,6 +123,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .bio("Expert in high-performance distributed architecture, Go, and Java systems.")
                     .hourlyRate(new BigDecimal("150.00"))
                     .isVerified(true)
+                    .available(true)
                     .averageRating(4.9)
                     .stack(javaStack)
                     .build();
@@ -173,7 +174,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             userRepository.save(user);
             mentorProfileRepository.save(MentorProfile.builder()
                 .name((String) row[1]).user(user).title((String) row[2]).bio((String) row[3])
-                .hourlyRate((BigDecimal) row[4]).isVerified(true).averageRating((Double) row[5])
+                .hourlyRate((BigDecimal) row[4]).isVerified(true).available(true).averageRating((Double) row[5])
                 .stack(sid != null ? stackRepository.findById(sid).orElse(null) : null).build());
             log.info("Seeded verified mentor: {}", email);
         }

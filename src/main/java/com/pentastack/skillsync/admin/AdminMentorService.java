@@ -69,6 +69,9 @@ public class AdminMentorService {
         MentorProfile mentor = mentorProfileRepository.findById(id)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Registration mentor not found"));
         mentor.setVerified(isVerified);
+        if (isVerified) {
+            mentor.setAvailable(true);
+        }
     }
 
     @Transactional(readOnly = true)
