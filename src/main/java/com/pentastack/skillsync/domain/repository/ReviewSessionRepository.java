@@ -26,4 +26,11 @@ public interface ReviewSessionRepository extends JpaRepository<ReviewSession, Lo
         LocalDateTime endTime,
         LocalDateTime startTime
     );
+
+    List<ReviewSession> findByMentor_IdAndStatusAndStartTimeBetween(
+        Long mentorId,
+        com.pentastack.skillsync.domain.SessionStatus status,
+        LocalDateTime from,
+        LocalDateTime to
+    );
 }

@@ -1,5 +1,6 @@
 package com.pentastack.skillsync.model;
 
+import com.pentastack.skillsync.domain.MentorProfile;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

@@ -1,5 +1,7 @@
 package com.pentastack.skillsync.seeder;
 
+import com.pentastack.skillsync.domain.MentorProfile;
+import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
 import com.pentastack.skillsync.model.*;
 import com.pentastack.skillsync.model.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,6 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     @org.springframework.beans.factory.annotation.Qualifier("modelStudentProfileRepository")
     private final StudentProfileRepository studentProfileRepository;
-    @org.springframework.beans.factory.annotation.Qualifier("modelMentorProfileRepository")
     private final MentorProfileRepository mentorProfileRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -79,15 +80,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .build();
             User savedUser = userRepository.save(user);
 
-            MentorProfile mentorProfile = MentorProfile.builder()
-                    .name("Test Mentor")
-                    .user(savedUser)
-                    .title("Senior Distributed Systems Engineer")
-                    .bio("Expert in high-performance distributed architecture, Go, and Java systems.")
-                    .hourlyRate(new BigDecimal("150.00"))
-                    .isVerified(true)
-                    .averageRating(4.9)
-                    .build();
+            MentorProfile mentorProfile = new MentorProfile(
+                    savedUser, null,
+                    "Test Mentor",
+                    "Senior Distributed Systems Engineer",
+                    "Expert in high-performance distributed architecture, Go, and Java systems.",
+                    true, 4.9,
+                    new BigDecimal("150.00"));
+            mentorProfile.setVerified(true);
             mentorProfileRepository.save(mentorProfile);
             savedUser.setMentorProfile(mentorProfile);
             log.info("Seeded Mentor user and profile: {}", email);

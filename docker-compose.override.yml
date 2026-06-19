@@ -1,0 +1,9 @@
+# ponytail: only remaps host ports; original compose untouched. Loaded automatically by `docker compose up`.
+# !override replaces the base ports list instead of appending to it.
+services:
+  postgres:
+    ports: !override
+      - "5433:5432"
+  backend:
+    ports: !override
+      - "8081:8080"
