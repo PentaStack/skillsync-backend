@@ -5,14 +5,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.pentastack.skillsync.domain.MentorProfile;
-import com.pentastack.skillsync.domain.Role;
+import com.pentastack.skillsync.model.MentorProfile;
+import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.domain.Stack;
-import com.pentastack.skillsync.domain.User;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.User;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.StackRepository;
-import com.pentastack.skillsync.domain.repository.StudentProfileRepository;
-import com.pentastack.skillsync.domain.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.StudentProfileRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,27 +57,27 @@ class MentorControllerIntegrationTest {
         javaStack = stackRepository.save(new Stack("Java", "JVM development"));
         reactStack = stackRepository.save(new Stack("React", "Frontend engineering"));
 
-        javaMentor = mentorProfileRepository.save(new MentorProfile(
-            userRepository.save(User.create("java.mentor@skillsync.dev", "hash", Role.MENTOR)),
-            javaStack,
-            "Java Mentor",
-            "Senior Java Engineer",
-            "Enterprise JVM mentoring",
-            true,
-            4.9,
-            BigDecimal.valueOf(150)
-        ));
+        javaMentor = mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("java.mentor@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(javaStack)
+            .name("Java Mentor")
+            .title("Senior Java Engineer")
+            .bio("Enterprise JVM mentoring")
+            .available(true)
+            .averageRating(4.9)
+            .hourlyRate(BigDecimal.valueOf(150))
+            .build());
 
-        reactMentor = mentorProfileRepository.save(new MentorProfile(
-            userRepository.save(User.create("react.mentor@skillsync.dev", "hash", Role.MENTOR)),
-            reactStack,
-            "React Mentor",
-            "Staff Frontend Engineer",
-            "React and TypeScript mentoring",
-            false,
-            4.5,
-            BigDecimal.valueOf(120)
-        ));
+        reactMentor = mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("react.mentor@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(reactStack)
+            .name("React Mentor")
+            .title("Staff Frontend Engineer")
+            .bio("React and TypeScript mentoring")
+            .available(false)
+            .averageRating(4.5)
+            .hourlyRate(BigDecimal.valueOf(120))
+            .build());
     }
 
     @Test

@@ -23,4 +23,8 @@ public class StudentProfile {
 
     @Column(nullable = false)
     private String name;
+
+    public String getDisplayName() {
+        return this.name;
+    }
 }

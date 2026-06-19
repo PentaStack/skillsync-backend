@@ -10,20 +10,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pentastack.skillsync.domain.MentorProfile;
-import com.pentastack.skillsync.domain.Role;
+import com.pentastack.skillsync.model.MentorProfile;
+import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.domain.SessionStatus;
 import com.pentastack.skillsync.domain.Stack;
-import com.pentastack.skillsync.domain.StudentProfile;
-import com.pentastack.skillsync.domain.User;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.StudentProfile;
+import com.pentastack.skillsync.model.User;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
 import com.pentastack.skillsync.domain.repository.SessionAuditLogRepository;
 import com.pentastack.skillsync.domain.repository.StackRepository;
-import com.pentastack.skillsync.domain.repository.StudentProfileRepository;
-import com.pentastack.skillsync.domain.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.StudentProfileRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import com.pentastack.skillsync.domain.MentorAvailability;
+import com.pentastack.skillsync.domain.repository.MentorAvailabilityRepository;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,6 +70,9 @@ class SessionControllerIntegrationTest {
     @Autowired
     private SessionAuditLogRepository sessionAuditLogRepository;
 
+    @Autowired
+    private MentorAvailabilityRepository mentorAvailabilityRepository;
+
     @org.springframework.beans.factory.annotation.Autowired
     private FakeSessionAuditClassifier auditClassifier;
 
@@ -100,6 +107,7 @@ class SessionControllerIntegrationTest {
     void setUp() {
         sessionAuditLogRepository.deleteAll();
         reviewSessionRepository.deleteAll();
+        mentorAvailabilityRepository.deleteAll();
         mentorProfileRepository.deleteAll();
         studentProfileRepository.deleteAll();
         stackRepository.deleteAll();
@@ -108,21 +116,50 @@ class SessionControllerIntegrationTest {
         Stack stack = stackRepository.save(new Stack("React Engineering", "Frontend competency reviews"));
 
         User mentorUser = userRepository.save(
-            User.create("mentor@skillsync.dev", "hash", Role.MENTOR)
+            User.builder().email("mentor@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()
         );
         mentor = mentorProfileRepository.save(
-            new MentorProfile(mentorUser, stack, "Mona Mentor", "Senior React Mentor", "Helps students debug UI systems", true, 4.8, BigDecimal.valueOf(60))
+            MentorProfile.builder()
+                .user(mentorUser)
+                .stack(stack)
+                .name("Mona Mentor")
+                .title("Senior React Mentor")
+                .bio("Helps students debug UI systems")
+                .available(true)
+                .averageRating(4.8)
+                .hourlyRate(BigDecimal.valueOf(60))
+                .build()
+        );
+
+        mentorAvailabilityRepository.save(
+            new MentorAvailability(mentor, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(10, 45))
+        );
+        mentorAvailabilityRepository.save(
+            new MentorAvailability(mentor, DayOfWeek.MONDAY, LocalTime.of(10, 15), LocalTime.of(11, 0))
+        );
+        mentorAvailabilityRepository.save(
+            new MentorAvailability(mentor, DayOfWeek.MONDAY, LocalTime.of(12, 0), LocalTime.of(12, 45))
+        );
+        mentorAvailabilityRepository.save(
+            new MentorAvailability(mentor, DayOfWeek.MONDAY, LocalTime.of(13, 0), LocalTime.of(13, 45))
+        );
+        mentorAvailabilityRepository.save(
+            new MentorAvailability(mentor, DayOfWeek.MONDAY, LocalTime.of(14, 0), LocalTime.of(14, 45))
         );
 
         User studentUser = userRepository.save(
-            User.create("student@skillsync.dev", "hash", Role.STUDENT)
+            User.builder().email("student@skillsync.dev").passwordHash("hash").role(Role.STUDENT).build()
         );
-        student = studentProfileRepository.save(new StudentProfile(studentUser, "Sam Student"));
+        student = studentProfileRepository.save(
+            StudentProfile.builder().user(studentUser).name("Sam Student").build()
+        );
 
         User otherStudentUser = userRepository.save(
-            User.create("other@skillsync.dev", "hash", Role.STUDENT)
+            User.builder().email("other@skillsync.dev").passwordHash("hash").role(Role.STUDENT).build()
         );
-        otherStudent = studentProfileRepository.save(new StudentProfile(otherStudentUser, "Olive Other"));
+        otherStudent = studentProfileRepository.save(
+            StudentProfile.builder().user(otherStudentUser).name("Olive Other").build()
+        );
 
         firstSlot = LocalDateTime.of(2026, 7, 6, 10, 0);
     }
@@ -140,6 +177,7 @@ class SessionControllerIntegrationTest {
                     "startTime", firstSlot.toString(),
                     "description", "Reviewing an asynchronous race condition in my Node engine"
                 ))))
+            .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id", notNullValue()))
             .andExpect(jsonPath("$.mentorName").value("Mona Mentor"))
@@ -263,6 +301,7 @@ class SessionControllerIntegrationTest {
                     "startTime", startTime.toString(),
                     "description", description
                 ))))
+            .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()

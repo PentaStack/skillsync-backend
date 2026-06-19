@@ -42,6 +42,22 @@ public class MentorProfile {
     @Column(name = "hourly_rate")
     private BigDecimal hourlyRate;
 
-    @Column(name = "stack_id")
-    private Long stackId; // Placeholder to be mapped to Stack entity by Dev-2
+    @Column(name = "available", nullable = false)
+    @Builder.Default
+    private boolean available = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stack_id", nullable = false)
+    private com.pentastack.skillsync.domain.Stack stack;
+
+    public String getDisplayName() {
+        return this.name;
+    }
+
+    public void updateProfile(String title, String bio, BigDecimal hourlyRate, boolean available) {
+        this.title = title;
+        this.bio = bio;
+        this.hourlyRate = hourlyRate;
+        this.available = available;
+    }
 }

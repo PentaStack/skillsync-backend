@@ -1,9 +1,9 @@
 package com.pentastack.skillsync.mentor;
 
 import com.pentastack.skillsync.common.dto.PagedResponse;
-import com.pentastack.skillsync.domain.MentorProfile;
+import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.domain.Stack;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
 import com.pentastack.skillsync.exception.ApiException;
 import com.pentastack.skillsync.mentor.dto.MentorDetailResponse;
@@ -105,7 +105,7 @@ public class MentorService {
             mentor.getUser().getEmail(),
             mentor.getTitle(),
             mentor.getBio(),
-            mentor.getRating(),
+            mentor.getAverageRating(),
             mentor.getHourlyRate(),
             mentor.isAvailable(),
             toStackResponses(mentor.getStack()),
@@ -121,7 +121,7 @@ public class MentorService {
             mentor.getUser().getEmail(),
             mentor.getTitle(),
             mentor.getBio(),
-            mentor.getRating(),
+            mentor.getAverageRating(),
             mentor.getHourlyRate(),
             mentor.isAvailable(),
             toStackResponses(mentor.getStack()),

@@ -2,6 +2,7 @@ package com.pentastack.skillsync.domain;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import com.pentastack.skillsync.model.MentorProfile;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

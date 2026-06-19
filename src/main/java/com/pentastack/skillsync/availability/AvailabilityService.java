@@ -16,15 +16,15 @@ import com.pentastack.skillsync.availability.dto.AvailabilityRequest;
 import com.pentastack.skillsync.availability.dto.AvailabilityResponse;
 import com.pentastack.skillsync.availability.dto.AvailableSlotsResponse;
 import com.pentastack.skillsync.domain.MentorAvailability;
-import com.pentastack.skillsync.domain.MentorProfile;
+import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.domain.ReviewSession;
-import com.pentastack.skillsync.domain.Role;
+import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.domain.SessionStatus;
-import com.pentastack.skillsync.domain.User;
+import com.pentastack.skillsync.model.User;
 import com.pentastack.skillsync.domain.repository.MentorAvailabilityRepository;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
-import com.pentastack.skillsync.domain.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import com.pentastack.skillsync.exception.ApiException;
 
 @Service

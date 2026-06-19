@@ -10,17 +10,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.pentastack.skillsync.availability.AvailabilityService;
 import com.pentastack.skillsync.domain.AuditStatus;
-import com.pentastack.skillsync.domain.MentorProfile;
+import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.domain.ReviewSession;
 import com.pentastack.skillsync.domain.SessionAuditLog;
 import com.pentastack.skillsync.domain.SessionStatus;
-import com.pentastack.skillsync.domain.StudentProfile;
-import com.pentastack.skillsync.domain.User;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.StudentProfile;
+import com.pentastack.skillsync.model.User;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
 import com.pentastack.skillsync.domain.repository.SessionAuditLogRepository;
-import com.pentastack.skillsync.domain.repository.StudentProfileRepository;
-import com.pentastack.skillsync.domain.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.StudentProfileRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import com.pentastack.skillsync.exception.ApiException;
 import com.pentastack.skillsync.sessions.dto.CreateSessionRequest;
 import com.pentastack.skillsync.sessions.dto.SessionAuditLogResponse;
@@ -169,7 +169,7 @@ public class SessionService {
             .orElseThrow(() -> new SessionNotFoundException("User not found"));
         boolean owns = session.getStudent().getUser().getEmail().equals(requesterEmail)
             || session.getMentor().getUser().getEmail().equals(requesterEmail)
-            || requester.getRole() == com.pentastack.skillsync.domain.Role.ADMIN;
+            || requester.getRole() == com.pentastack.skillsync.model.Role.ADMIN;
         if (!owns) {
             throw new SessionAccessDeniedException("You do not have access to this session");
         }

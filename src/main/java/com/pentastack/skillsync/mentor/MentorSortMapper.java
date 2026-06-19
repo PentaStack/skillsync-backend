@@ -9,14 +9,14 @@ public final class MentorSortMapper {
 
     public static Sort resolve(String sortBy) {
         if (sortBy == null || sortBy.isBlank()) {
-            return Sort.by(Sort.Order.desc("available"), Sort.Order.desc("rating"));
+            return Sort.by(Sort.Order.desc("available"), Sort.Order.desc("averageRating"));
         }
 
         return switch (sortBy.toLowerCase(Locale.ROOT)) {
-            case "rating" -> Sort.by(Sort.Order.desc("rating"), Sort.Order.desc("available"));
+            case "rating" -> Sort.by(Sort.Order.desc("averageRating"), Sort.Order.desc("available"));
             case "price" -> Sort.by(Sort.Order.asc("hourlyRate"), Sort.Order.desc("available"));
-            case "availability" -> Sort.by(Sort.Order.desc("available"), Sort.Order.desc("rating"));
-            default -> Sort.by(Sort.Order.desc("available"), Sort.Order.desc("rating"));
+            case "availability" -> Sort.by(Sort.Order.desc("available"), Sort.Order.desc("averageRating"));
+            default -> Sort.by(Sort.Order.desc("available"), Sort.Order.desc("averageRating"));
         };
     }
 }
