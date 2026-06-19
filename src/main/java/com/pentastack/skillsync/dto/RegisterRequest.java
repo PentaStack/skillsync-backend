@@ -32,4 +32,5 @@ public class RegisterRequest {
     private String title;
     private java.math.BigDecimal hourlyRate;
     private String bio;
+    private Long stackId;
 }

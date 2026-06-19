@@ -2,8 +2,12 @@ package com.pentastack.skillsync.mentor;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.MediaType;
+import java.util.Map;
 
 import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.model.Role;
@@ -29,6 +33,9 @@ class MentorControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private UserRepository userRepository;
@@ -129,5 +136,22 @@ class MentorControllerIntegrationTest {
         mockMvc.perform(get("/api/mentors/{id}", 99999L))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Mentor not found"));
+    }
+
+    @Test
+    void mentorRegistrationSucceedsWithDefaultStack() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "name", "New Mentor",
+                    "email", "new.mentor@skillsync.dev",
+                    "password", "password123",
+                    "role", "MENTOR",
+                    "title", "Expert Backend Developer",
+                    "hourlyRate", 100,
+                    "bio", "Test bio for registration"
+                ))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.user.email").value("new.mentor@skillsync.dev"));
     }
 }

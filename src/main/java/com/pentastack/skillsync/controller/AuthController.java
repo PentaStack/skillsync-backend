@@ -12,6 +12,7 @@ import com.pentastack.skillsync.model.User;
 import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.model.repository.StudentProfileRepository;
 import com.pentastack.skillsync.model.repository.UserRepository;
+import com.pentastack.skillsync.domain.repository.StackRepository;
 import com.pentastack.skillsync.security.JwtTokenProvider;
 import com.pentastack.skillsync.security.UserPrincipal;
 import jakarta.validation.Valid;
@@ -41,6 +42,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+    private final StackRepository stackRepository;
 
     /**
      * POST /api/auth/register -> Signup student or mentor
@@ -70,12 +72,23 @@ public class AuthController {
             studentProfileRepository.save(studentProfile);
             savedUser.setStudentProfile(studentProfile);
         } else if (registerRequest.getRole() == Role.MENTOR) {
+            com.pentastack.skillsync.domain.Stack stack = null;
+            if (registerRequest.getStackId() != null) {
+                stack = stackRepository.findById(registerRequest.getStackId()).orElse(null);
+            }
+            if (stack == null) {
+                stack = stackRepository.findAll().stream()
+                        .findFirst()
+                        .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "No stacks available in the database"));
+            }
+
             MentorProfile mentorProfile = MentorProfile.builder()
                     .name(registerRequest.getName())
                     .user(savedUser)
                     .title(registerRequest.getTitle())
                     .hourlyRate(registerRequest.getHourlyRate())
                     .bio(registerRequest.getBio())
+                    .stack(stack)
                     .build();
             mentorProfileRepository.save(mentorProfile);
             savedUser.setMentorProfile(mentorProfile);
