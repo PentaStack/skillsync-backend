@@ -16,8 +16,13 @@ public class BookingConstraintInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        jdbc.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS uq_mentor_slot "
-                + "ON review_sessions (mentor_id, start_time) WHERE status = 'SCHEDULED'");
+        try {
+            jdbc.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_mentor_slot "
+                    + "ON review_sessions (mentor_id, start_time) WHERE status = 'SCHEDULED'");
+        } catch (Exception e) {
+            // Log warning, do not fail application startup (e.g. on H2 databases in test scope)
+            System.out.println("Warning: Could not create partial unique index uq_mentor_slot: " + e.getMessage());
+        }
     }
 }

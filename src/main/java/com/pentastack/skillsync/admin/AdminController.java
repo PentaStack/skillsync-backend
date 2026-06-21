@@ -58,14 +58,13 @@ public class AdminController {
     }
 
     @PutMapping("/mentors/live/{id}/verification")
-    @Operation(summary = "Approve or reject a live mentor",
-               description = "Maps isVerified request field to domain MentorProfile.available flag")
+    @Operation(summary = "Approve or reject a live mentor")
     public ResponseEntity<Void> updateLiveVerification(
         @PathVariable Long id,
         @RequestBody Map<String, Boolean> body
     ) {
-        boolean isVerified = Boolean.TRUE.equals(body.get("isVerified"));
-        adminMentorService.updateLiveVerification(id, isVerified);
+        boolean isAvailable = Boolean.TRUE.equals(body.get("isVerified"));
+        adminMentorService.updateLiveVerification(id, isAvailable);
         return ResponseEntity.ok().build();
     }
 

@@ -3,7 +3,8 @@ package com.pentastack.skillsync.admin;
 import com.pentastack.skillsync.admin.dto.*;
 import com.pentastack.skillsync.common.dto.PagedResponse;
 import com.pentastack.skillsync.domain.ReviewSession;
-import com.pentastack.skillsync.domain.StudentProfile;
+import com.pentastack.skillsync.model.StudentProfile;
+import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.domain.repository.ReviewSessionRepository;
 import com.pentastack.skillsync.domain.repository.StackRepository;
 import com.pentastack.skillsync.exception.ApiException;
@@ -20,22 +21,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AdminMentorService {
 
-    private final com.pentastack.skillsync.model.repository.MentorProfileRepository modelMentorProfileRepository;
-    private final com.pentastack.skillsync.domain.repository.MentorProfileRepository domainMentorProfileRepository;
-    private final com.pentastack.skillsync.domain.repository.StudentProfileRepository domainStudentProfileRepository;
+    private final com.pentastack.skillsync.model.repository.MentorProfileRepository mentorProfileRepository;
+    private final com.pentastack.skillsync.model.repository.StudentProfileRepository studentProfileRepository;
     private final StackRepository stackRepository;
     private final ReviewSessionRepository reviewSessionRepository;
 
     public AdminMentorService(
-        com.pentastack.skillsync.model.repository.MentorProfileRepository modelMentorProfileRepository,
-        com.pentastack.skillsync.domain.repository.MentorProfileRepository domainMentorProfileRepository,
-        com.pentastack.skillsync.domain.repository.StudentProfileRepository domainStudentProfileRepository,
+        com.pentastack.skillsync.model.repository.MentorProfileRepository mentorProfileRepository,
+        com.pentastack.skillsync.model.repository.StudentProfileRepository studentProfileRepository,
         StackRepository stackRepository,
         ReviewSessionRepository reviewSessionRepository
     ) {
-        this.modelMentorProfileRepository = modelMentorProfileRepository;
-        this.domainMentorProfileRepository = domainMentorProfileRepository;
-        this.domainStudentProfileRepository = domainStudentProfileRepository;
+        this.mentorProfileRepository = mentorProfileRepository;
+        this.studentProfileRepository = studentProfileRepository;
         this.stackRepository = stackRepository;
         this.reviewSessionRepository = reviewSessionRepository;
     }
@@ -43,15 +41,15 @@ public class AdminMentorService {
     @Transactional(readOnly = true)
     public PagedResponse<AdminRegistrationMentorResponse> getPendingRegistrations(int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50));
-        Page<com.pentastack.skillsync.model.MentorProfile> result =
-            modelMentorProfileRepository.findByIsVerified(false, pageable);
+        Page<MentorProfile> result =
+            mentorProfileRepository.findByIsVerified(false, pageable);
 
         List<AdminRegistrationMentorResponse> items = result.getContent().stream()
             .map(mp -> new AdminRegistrationMentorResponse(
                 mp.getId(),
                 mp.getName(),
                 mp.getUser().getEmail(),
-                resolveStackName(mp.getStackId()),
+                mp.getStack() != null ? mp.getStack().getName() : "Unknown stack",
                 mp.getUser().getCreatedAt(),
                 mp.isVerified()
             ))
@@ -68,16 +66,19 @@ public class AdminMentorService {
 
     @Transactional
     public void updateRegistrationVerification(Long id, boolean isVerified) {
-        com.pentastack.skillsync.model.MentorProfile mentor = modelMentorProfileRepository.findById(id)
+        MentorProfile mentor = mentorProfileRepository.findById(id)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Registration mentor not found"));
         mentor.setVerified(isVerified);
+        if (isVerified) {
+            mentor.setAvailable(true);
+        }
     }
 
     @Transactional(readOnly = true)
     public PagedResponse<AdminLiveMentorResponse> getPendingLiveVerifications(int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50));
-        Page<com.pentastack.skillsync.domain.MentorProfile> result =
-            domainMentorProfileRepository.findByAvailable(false, pageable);
+        Page<MentorProfile> result =
+            mentorProfileRepository.findByAvailable(false, pageable);
 
         List<AdminLiveMentorResponse> items = result.getContent().stream()
             .map(mp -> new AdminLiveMentorResponse(
@@ -86,7 +87,7 @@ public class AdminMentorService {
                 mp.getUser().getEmail(),
                 mp.getStack() != null ? mp.getStack().getName() : "Unknown stack",
                 mp.isAvailable(),
-                mp.getRating()
+                mp.getAverageRating()
             ))
             .toList();
 
@@ -100,19 +101,19 @@ public class AdminMentorService {
     }
 
     @Transactional
-    public void updateLiveVerification(Long id, boolean isVerified) {
-        com.pentastack.skillsync.domain.MentorProfile mentor = domainMentorProfileRepository.findById(id)
+    public void updateLiveVerification(Long id, boolean isAvailable) {
+        MentorProfile mentor = mentorProfileRepository.findById(id)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Live mentor not found"));
-        mentor.updateProfile(mentor.getTitle(), mentor.getBio(), mentor.getHourlyRate(), isVerified);
+        mentor.updateProfile(mentor.getTitle(), mentor.getBio(), mentor.getHourlyRate(), isAvailable);
     }
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
         long totalSessions = reviewSessionRepository.count();
-        long activeMentors = domainMentorProfileRepository.countByAvailable(true);
-        long pendingLiveVerifications = domainMentorProfileRepository.countByAvailable(false);
-        long pendingRegistrations = modelMentorProfileRepository.countByIsVerified(false);
-        Double avgRating = domainMentorProfileRepository.findAverageRatingByAvailable(true).orElse(null);
+        long activeMentors = mentorProfileRepository.countByAvailable(true);
+        long pendingLiveVerifications = mentorProfileRepository.countByAvailable(false);
+        long pendingRegistrations = mentorProfileRepository.countByIsVerified(false);
+        Double avgRating = mentorProfileRepository.findAverageRatingByAvailable(true).orElse(null);
 
         return new AdminStatsResponse(
             totalSessions,
@@ -126,8 +127,8 @@ public class AdminMentorService {
     @Transactional(readOnly = true)
     public PagedResponse<AdminMentorListResponse> getAllMentors(int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50));
-        Page<com.pentastack.skillsync.domain.MentorProfile> result =
-            domainMentorProfileRepository.findAllWithDetails(pageable);
+        Page<MentorProfile> result =
+            mentorProfileRepository.findAllWithDetails(pageable);
 
         Map<Long, Long> sessionCounts = reviewSessionRepository.countSessionsGroupedByMentorId()
             .stream()
@@ -142,7 +143,7 @@ public class AdminMentorService {
                 mp.getTitle(),
                 mp.getBio(),
                 mp.isAvailable(),
-                mp.getRating(),
+                mp.getAverageRating(),
                 mp.getHourlyRate(),
                 sessionCounts.getOrDefault(mp.getId(), 0L)
             ))
@@ -159,7 +160,7 @@ public class AdminMentorService {
 
     @Transactional(readOnly = true)
     public AdminMentorDetailResponse getMentorDetail(Long id) {
-        com.pentastack.skillsync.domain.MentorProfile mp = domainMentorProfileRepository.findById(id)
+        MentorProfile mp = mentorProfileRepository.findById(id)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Mentor not found"));
 
         List<ReviewSession> sessions = reviewSessionRepository.findByMentor_IdOrderByStartTimeDesc(id);
@@ -173,7 +174,7 @@ public class AdminMentorService {
             mp.getTitle(),
             mp.getBio(),
             mp.isAvailable(),
-            mp.getRating(),
+            mp.getAverageRating(),
             mp.getHourlyRate(),
             sessions.size(),
             sessions.stream().map(s -> new AdminSessionSummaryResponse(
@@ -192,7 +193,7 @@ public class AdminMentorService {
     @Transactional(readOnly = true)
     public PagedResponse<AdminStudentListResponse> getAllStudents(int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50));
-        Page<StudentProfile> result = domainStudentProfileRepository.findAllWithUser(pageable);
+        Page<StudentProfile> result = studentProfileRepository.findAllWithUser(pageable);
 
         Map<Long, Long> sessionCounts = reviewSessionRepository.countSessionsGroupedByStudentUserId()
             .stream()
@@ -218,7 +219,7 @@ public class AdminMentorService {
 
     @Transactional(readOnly = true)
     public AdminStudentDetailResponse getStudentDetail(Long id) {
-        StudentProfile sp = domainStudentProfileRepository.findById(id)
+        StudentProfile sp = studentProfileRepository.findById(id)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Student not found"));
 
         List<ReviewSession> sessions = reviewSessionRepository.findByStudent_User_IdOrderByStartTimeDesc(sp.getUser().getId());
@@ -239,12 +240,5 @@ public class AdminMentorService {
                 s.getDescription()
             )).toList()
         );
-    }
-
-    private String resolveStackName(Long stackId) {
-        if (stackId == null) return "Unknown stack";
-        return stackRepository.findById(stackId)
-            .map(com.pentastack.skillsync.domain.Stack::getName)
-            .orElse("Unknown stack");
     }
 }

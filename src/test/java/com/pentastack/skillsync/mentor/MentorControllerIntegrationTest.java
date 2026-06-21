@@ -2,17 +2,21 @@ package com.pentastack.skillsync.mentor;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.MediaType;
+import java.util.Map;
 
-import com.pentastack.skillsync.domain.MentorProfile;
-import com.pentastack.skillsync.domain.Role;
+import com.pentastack.skillsync.model.MentorProfile;
+import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.domain.Stack;
-import com.pentastack.skillsync.domain.User;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.User;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.StackRepository;
-import com.pentastack.skillsync.domain.repository.StudentProfileRepository;
-import com.pentastack.skillsync.domain.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.StudentProfileRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,9 @@ class MentorControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private UserRepository userRepository;
@@ -57,27 +64,29 @@ class MentorControllerIntegrationTest {
         javaStack = stackRepository.save(new Stack("Java", "JVM development"));
         reactStack = stackRepository.save(new Stack("React", "Frontend engineering"));
 
-        javaMentor = mentorProfileRepository.save(new MentorProfile(
-            userRepository.save(User.create("java.mentor@skillsync.dev", "hash", Role.MENTOR)),
-            javaStack,
-            "Java Mentor",
-            "Senior Java Engineer",
-            "Enterprise JVM mentoring",
-            true,
-            4.9,
-            BigDecimal.valueOf(150)
-        ));
+        javaMentor = mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("java.mentor@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(javaStack)
+            .name("Java Mentor")
+            .title("Senior Java Engineer")
+            .bio("Enterprise JVM mentoring")
+            .available(true)
+            .isVerified(true)
+            .averageRating(4.9)
+            .hourlyRate(BigDecimal.valueOf(150))
+            .build());
 
-        reactMentor = mentorProfileRepository.save(new MentorProfile(
-            userRepository.save(User.create("react.mentor@skillsync.dev", "hash", Role.MENTOR)),
-            reactStack,
-            "React Mentor",
-            "Staff Frontend Engineer",
-            "React and TypeScript mentoring",
-            false,
-            4.5,
-            BigDecimal.valueOf(120)
-        ));
+        reactMentor = mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("react.mentor@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(reactStack)
+            .name("React Mentor")
+            .title("Staff Frontend Engineer")
+            .bio("React and TypeScript mentoring")
+            .available(true)
+            .isVerified(true)
+            .averageRating(4.5)
+            .hourlyRate(BigDecimal.valueOf(120))
+            .build());
     }
 
     @Test
@@ -129,5 +138,49 @@ class MentorControllerIntegrationTest {
         mockMvc.perform(get("/api/mentors/{id}", 99999L))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Mentor not found"));
+    }
+
+    @Test
+    void mentorRegistrationSucceedsWithDefaultStack() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "name", "New Mentor",
+                    "email", "new.mentor@skillsync.dev",
+                    "password", "password123",
+                    "role", "MENTOR",
+                    "title", "Expert Backend Developer",
+                    "hourlyRate", 100,
+                    "bio", "Test bio for registration"
+                ))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.user.email").value("new.mentor@skillsync.dev"));
+    }
+
+    @Test
+    void unverifiedOrUnavailableMentorsAreExcludedFromDiscovery() throws Exception {
+        mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("unverified@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(javaStack)
+            .name("Unverified Mentor")
+            .available(true)
+            .isVerified(false)
+            .hourlyRate(BigDecimal.valueOf(100))
+            .build());
+
+        mentorProfileRepository.save(MentorProfile.builder()
+            .user(userRepository.save(User.builder().email("unavailable@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()))
+            .stack(javaStack)
+            .name("Unavailable Mentor")
+            .available(false)
+            .isVerified(true)
+            .hourlyRate(BigDecimal.valueOf(100))
+            .build());
+
+        mockMvc.perform(get("/api/mentors"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items", hasSize(2)))
+            .andExpect(jsonPath("$.items[?(@.name == 'Unverified Mentor')]").doesNotExist())
+            .andExpect(jsonPath("$.items[?(@.name == 'Unavailable Mentor')]").doesNotExist());
     }
 }

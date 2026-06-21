@@ -33,6 +33,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        seedStacks();
         seedAdmin();
         seedStudent();
         seedMentor();
@@ -43,6 +44,24 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedUnverifiedMentors(stackIds);
         seedExtraVerifiedMentors(stackIds);
         seedExtraStudents();
+    }
+
+    private void seedStacks() {
+        String[][] stacks = {
+            {"Java", "Java Programming and JVM development"},
+            {"React", "React Frontend development"},
+            {"Go", "Go Programming and backend development"},
+            {"Python", "Python Programming and data engineering"},
+            {"DevOps", "DevOps and cloud infrastructure"},
+            {"Rust", "Rust systems programming"}
+        };
+        for (String[] row : stacks) {
+            String name = row[0];
+            String desc = row[1];
+            if (!stackRepository.existsByNameIgnoreCase(name)) {
+                stackRepository.save(new Stack(name, desc));
+            }
+        }
     }
 
     private void seedAdmin() {
@@ -92,6 +111,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .build();
             User savedUser = userRepository.save(user);
 
+            Stack javaStack = stackRepository.findAll().stream()
+                    .filter(s -> s.getName().equalsIgnoreCase("Java"))
+                    .findFirst()
+                    .orElse(null);
+
             MentorProfile mentorProfile = MentorProfile.builder()
                     .name("Test Mentor")
                     .user(savedUser)
@@ -99,7 +123,9 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .bio("Expert in high-performance distributed architecture, Go, and Java systems.")
                     .hourlyRate(new BigDecimal("150.00"))
                     .isVerified(true)
+                    .available(true)
                     .averageRating(4.9)
+                    .stack(javaStack)
                     .build();
             mentorProfileRepository.save(mentorProfile);
             savedUser.setMentorProfile(mentorProfile);
@@ -127,7 +153,8 @@ public class DatabaseSeeder implements CommandLineRunner {
             userRepository.save(user);
             mentorProfileRepository.save(MentorProfile.builder()
                 .name((String) row[1]).user(user).title((String) row[2]).bio((String) row[3])
-                .hourlyRate((BigDecimal) row[4]).isVerified(false).averageRating(0.0).stackId(sid).build());
+                .hourlyRate((BigDecimal) row[4]).isVerified(false).averageRating(0.0)
+                .stack(sid != null ? stackRepository.findById(sid).orElse(null) : null).build());
             log.info("Seeded unverified mentor: {}", email);
         }
     }
@@ -147,7 +174,8 @@ public class DatabaseSeeder implements CommandLineRunner {
             userRepository.save(user);
             mentorProfileRepository.save(MentorProfile.builder()
                 .name((String) row[1]).user(user).title((String) row[2]).bio((String) row[3])
-                .hourlyRate((BigDecimal) row[4]).isVerified(true).averageRating((Double) row[5]).stackId(sid).build());
+                .hourlyRate((BigDecimal) row[4]).isVerified(true).available(true).averageRating((Double) row[5])
+                .stack(sid != null ? stackRepository.findById(sid).orElse(null) : null).build());
             log.info("Seeded verified mentor: {}", email);
         }
     }

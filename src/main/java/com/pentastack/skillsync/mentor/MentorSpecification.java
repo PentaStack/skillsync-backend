@@ -1,6 +1,6 @@
 package com.pentastack.skillsync.mentor;
 
-import com.pentastack.skillsync.domain.MentorProfile;
+import com.pentastack.skillsync.model.MentorProfile;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
@@ -22,12 +22,14 @@ public final class MentorSpecification {
             }
 
             List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("available"), true));
+            predicates.add(cb.equal(root.get("isVerified"), true));
 
             if (keyword != null && !keyword.isBlank()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";
                 var stackJoin = root.join("stack", JoinType.LEFT);
                 predicates.add(cb.or(
-                    cb.like(cb.lower(root.get("displayName")), pattern),
+                    cb.like(cb.lower(root.get("name")), pattern),
                     cb.like(cb.lower(root.get("title")), pattern),
                     cb.like(cb.lower(root.get("bio")), pattern),
                     cb.like(cb.lower(stackJoin.get("name")), pattern)

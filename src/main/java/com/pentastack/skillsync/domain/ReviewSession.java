@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import com.pentastack.skillsync.model.MentorProfile;
+import com.pentastack.skillsync.model.StudentProfile;
 
 @Entity
 @Table(name = "review_sessions")

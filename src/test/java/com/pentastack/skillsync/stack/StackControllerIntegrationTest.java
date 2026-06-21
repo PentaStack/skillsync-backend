@@ -11,10 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pentastack.skillsync.domain.Stack;
-import com.pentastack.skillsync.domain.repository.MentorProfileRepository;
+import com.pentastack.skillsync.model.repository.MentorProfileRepository;
 import com.pentastack.skillsync.domain.repository.StackRepository;
-import com.pentastack.skillsync.domain.repository.StudentProfileRepository;
-import com.pentastack.skillsync.domain.repository.UserRepository;
+import com.pentastack.skillsync.model.repository.StudentProfileRepository;
+import com.pentastack.skillsync.model.repository.UserRepository;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
