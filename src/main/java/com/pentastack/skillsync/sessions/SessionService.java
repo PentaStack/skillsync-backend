@@ -246,6 +246,7 @@ public class SessionService {
             session.getDescription(),
             session.getStatus(),
             session.getEvaluationNotes(),
+            session.getMeetingLink(),
             audit == null ? null : toAuditResponse(audit)
         );
     }
@@ -262,6 +263,7 @@ public class SessionService {
             session.getDescription(),
             session.getStatus(),
             session.getEvaluationNotes(),
+            session.getMeetingLink(),
             toAuditResponse(auditLog)
         );
     }
