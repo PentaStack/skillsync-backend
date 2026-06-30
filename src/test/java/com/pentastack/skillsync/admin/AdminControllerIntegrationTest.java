@@ -54,6 +54,7 @@ class AdminControllerIntegrationTest {
     private User adminUser;
     private User studentUser;
     private User mentorUser;
+    private Stack stack;
 
     @BeforeEach
     void setUp() {
@@ -62,7 +63,7 @@ class AdminControllerIntegrationTest {
         stackRepository.deleteAll();
         userRepository.deleteAll();
 
-        Stack stack = stackRepository.save(new Stack("Java", "Backend development"));
+        stack = stackRepository.save(new Stack("Java", "Backend development"));
 
         adminUser = userRepository.save(User.builder()
             .email("admin@skillsync.dev")
@@ -137,5 +138,47 @@ class AdminControllerIntegrationTest {
 
         User reloaded = userRepository.findById(studentUser.getId()).orElseThrow();
         org.assertj.core.api.Assertions.assertThat(reloaded.isBlocked()).isTrue();
+    }
+
+    @Test
+    void adminRejectsPendingMentorAndRemovesFromQueue() throws Exception {
+        User pendingMentorUser = userRepository.save(User.builder()
+            .email("pending-mentor@skillsync.dev")
+            .passwordHash("hash")
+            .role(Role.MENTOR)
+            .build());
+        MentorProfile pendingMentor = mentorProfileRepository.save(MentorProfile.builder()
+            .name("Pending Mentor")
+            .user(pendingMentorUser)
+            .stack(stack)
+            .title("Pending Java Mentor")
+            .bio("Waiting for review")
+            .hourlyRate(BigDecimal.valueOf(90))
+            .isVerified(false)
+            .available(false)
+            .build());
+
+        mockMvc.perform(get("/api/admin/mentors/pending/registrations")
+                .with(user("admin@skillsync.dev").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.items[0].id").value(pendingMentor.getId()));
+
+        mockMvc.perform(put("/api/admin/mentors/registrations/{id}/verification", pendingMentor.getId())
+                .with(user("admin@skillsync.dev").roles("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("isVerified", false))))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/admin/mentors/pending/registrations")
+                .with(user("admin@skillsync.dev").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(0));
+
+        User reloadedUser = userRepository.findById(pendingMentorUser.getId()).orElseThrow();
+        MentorProfile reloadedMentor = mentorProfileRepository.findById(pendingMentor.getId()).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(reloadedUser.isBlocked()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(reloadedMentor.isVerified()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(reloadedMentor.isAvailable()).isFalse();
     }
 }

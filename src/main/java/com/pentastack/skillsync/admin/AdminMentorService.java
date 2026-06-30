@@ -64,7 +64,7 @@ public class AdminMentorService {
     public PagedResponse<AdminRegistrationMentorResponse> getPendingRegistrations(int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50));
         Page<MentorProfile> result =
-            mentorProfileRepository.findByIsVerified(false, pageable);
+            mentorProfileRepository.findByIsVerifiedAndUser_Blocked(false, false, pageable);
 
         List<AdminRegistrationMentorResponse> items = result.getContent().stream()
             .map(mp -> new AdminRegistrationMentorResponse(
@@ -92,7 +92,11 @@ public class AdminMentorService {
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Registration mentor not found"));
         mentor.setVerified(isVerified);
         if (isVerified) {
+            mentor.getUser().setBlocked(false);
             mentor.setAvailable(true);
+        } else {
+            mentor.setAvailable(false);
+            mentor.getUser().setBlocked(true);
         }
     }
 
@@ -134,7 +138,7 @@ public class AdminMentorService {
         long totalSessions = reviewSessionRepository.count();
         long activeMentors = mentorProfileRepository.countByAvailable(true);
         long pendingLiveVerifications = mentorProfileRepository.countByAvailable(false);
-        long pendingRegistrations = mentorProfileRepository.countByIsVerified(false);
+        long pendingRegistrations = mentorProfileRepository.countByIsVerifiedAndUser_Blocked(false, false);
         Double avgRating = mentorProfileRepository.findAverageRatingByAvailable(true).orElse(null);
 
         return new AdminStatsResponse(
