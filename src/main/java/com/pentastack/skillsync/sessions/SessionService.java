@@ -7,8 +7,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +39,8 @@ public class SessionService {
     private final StudentProfileRepository studentProfileRepository;
     private final UserRepository userRepository;
     private final SessionAuditClassifier classifier;
+    private final SessionAuditLogWriter sessionAuditLogWriter;
     private final AvailabilityService availabilityService;
-    private final TransactionTemplate transactionTemplate;
 
     public SessionService(
         ReviewSessionRepository reviewSessionRepository,
@@ -51,8 +49,8 @@ public class SessionService {
         StudentProfileRepository studentProfileRepository,
         UserRepository userRepository,
         SessionAuditClassifier classifier,
-        AvailabilityService availabilityService,
-        PlatformTransactionManager transactionManager
+        SessionAuditLogWriter sessionAuditLogWriter,
+        AvailabilityService availabilityService
     ) {
         this.reviewSessionRepository = reviewSessionRepository;
         this.sessionAuditLogRepository = sessionAuditLogRepository;
@@ -60,32 +58,32 @@ public class SessionService {
         this.studentProfileRepository = studentProfileRepository;
         this.userRepository = userRepository;
         this.classifier = classifier;
+        this.sessionAuditLogWriter = sessionAuditLogWriter;
         this.availabilityService = availabilityService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
+    @Transactional
     public SessionResponse createSession(String studentEmail, CreateSessionRequest request) {
-        ReviewSession session = transactionTemplate.execute(status -> {
-            StudentProfile student = studentProfileRepository.findByUser_Email(studentEmail)
-                .orElseThrow(() -> new SessionNotFoundException("Student profile not found"));
-            MentorProfile mentor = mentorProfileRepository.findWithUserById(request.mentorId())
-                .orElseThrow(() -> new SessionNotFoundException("Mentor profile not found"));
+        StudentProfile student = studentProfileRepository.findByUser_Email(studentEmail)
+            .orElseThrow(() -> new SessionNotFoundException("Student profile not found"));
+        MentorProfile mentor = mentorProfileRepository.findWithUserById(request.mentorId())
+            .orElseThrow(() -> new SessionNotFoundException("Mentor profile not found"));
 
-            LocalDateTime endTime = request.startTime().plusMinutes(45);
-            if (reviewSessionRepository.existsByMentor_IdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
-                mentor.getId(), SessionStatus.SCHEDULED, endTime, request.startTime()
-            )) {
-                throw new SessionConflictException("Mentor is already booked for that time window");
-            }
-            requireAvailableSlot(mentor.getId(), request.startTime());
+        LocalDateTime endTime = request.startTime().plusMinutes(45);
+        if (reviewSessionRepository.existsByMentor_IdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
+            mentor.getId(), SessionStatus.SCHEDULED, endTime, request.startTime()
+        )) {
+            throw new SessionConflictException("Mentor is already booked for that time window");
+        }
+        requireAvailableSlot(mentor.getId(), request.startTime());
 
-            try {
-                return reviewSessionRepository.saveAndFlush(
-                    new ReviewSession(mentor, student, request.startTime(), request.description()));
-            } catch (DataIntegrityViolationException ex) {
-                throw new SessionConflictException("Mentor is already booked for that time window");
-            }
-        });
+        ReviewSession session;
+        try {
+            session = reviewSessionRepository.saveAndFlush(
+                new ReviewSession(mentor, student, request.startTime(), request.description()));
+        } catch (DataIntegrityViolationException ex) {
+            throw new SessionConflictException("Mentor is already booked for that time window");
+        }
 
         long startTime = System.currentTimeMillis();
         AuditClassificationResult classification = null;
@@ -122,16 +120,9 @@ public class SessionService {
             );
         }
 
-        final SessionAuditLog finalAuditLog = auditLog;
-        try {
-            transactionTemplate.executeWithoutResult(status -> {
-                sessionAuditLogRepository.save(finalAuditLog);
-            });
-        } catch (Throwable dbEx) {
-            log.error("Failed to save session audit log: {}", dbEx.getMessage(), dbEx);
-        }
+        SessionAuditLog savedAuditLog = sessionAuditLogWriter.saveAndFlush(auditLog);
 
-        return toResponse(session, finalAuditLog);
+        return toResponse(session, savedAuditLog);
     }
 
     @Transactional(readOnly = true)
@@ -172,11 +163,11 @@ public class SessionService {
             throw new SessionConflictException("Only scheduled sessions can be updated");
         }
 
-        if (request.startTime() != null) {
+        if (request.startTime() != null && !request.startTime().equals(session.getStartTime())) {
             LocalDateTime endTime = request.startTime().plusMinutes(45);
-            boolean overlap = reviewSessionRepository.existsByMentor_IdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
-                session.getMentor().getId(), SessionStatus.SCHEDULED, endTime, request.startTime()
-            );
+            boolean overlap = reviewSessionRepository.countOverlappingSessionsExcludingId(
+                session.getMentor().getId(), SessionStatus.SCHEDULED, endTime, request.startTime(), session.getId()
+            ) > 0;
             if (overlap) {
                 throw new SessionConflictException("Mentor is already booked for that time window");
             }

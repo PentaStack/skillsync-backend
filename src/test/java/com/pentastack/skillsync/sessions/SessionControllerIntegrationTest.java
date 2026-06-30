@@ -205,6 +205,19 @@ class SessionControllerIntegrationTest {
     }
 
     @Test
+    void mentorCannotBookSessionThroughStudentBookingEndpoint() throws Exception {
+        mockMvc.perform(post("/api/sessions")
+                .with(user("mentor@skillsync.dev").roles("MENTOR"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "mentorId", mentor.getId(),
+                    "startTime", firstSlot.toString(),
+                    "description", "Mentor should be forbidden from booking"
+                ))))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void overlappingBookingForSameMentorIsRejected() throws Exception {
         auditClassifier.returnNext(AuditClassificationResult.success("REACT_STATE", 0.82, 21));
 
@@ -326,6 +339,23 @@ class SessionControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.startTime").value("2026-07-06T14:00:00"))
             .andExpect(jsonPath("$.endTime").value("2026-07-06T14:45:00"));
+    }
+
+    @Test
+    void reschedulingToSameStartTimeDoesNotConflictWithCurrentSession() throws Exception {
+        auditClassifier.returnNext(AuditClassificationResult.success("API_DESIGN", 0.8, 28));
+
+        long sessionId = bookAsStudent("student@skillsync.dev", firstSlot, "Keep this review at the same time");
+
+        mockMvc.perform(put("/api/sessions/{id}", sessionId)
+                .with(user("student@skillsync.dev").roles("STUDENT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "startTime", firstSlot.toString()
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.startTime").value("2026-07-06T10:00:00"))
+            .andExpect(jsonPath("$.endTime").value("2026-07-06T10:45:00"));
     }
 
     private long bookAsStudent(String email, LocalDateTime startTime, String description) throws Exception {
