@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.pentastack.skillsync.availability.AvailabilityService;
 import com.pentastack.skillsync.domain.AuditStatus;
 import com.pentastack.skillsync.model.MentorProfile;
+import com.pentastack.skillsync.model.Role;
 import com.pentastack.skillsync.domain.ReviewSession;
 import com.pentastack.skillsync.domain.SessionAuditLog;
 import com.pentastack.skillsync.domain.SessionStatus;
@@ -158,8 +159,19 @@ public class SessionService {
     public SessionResponse updateSession(String requesterEmail, Long sessionId, UpdateSessionRequest request) {
         ReviewSession session = reviewSessionRepository.findWithDetailsById(sessionId)
             .orElseThrow(() -> new SessionNotFoundException("Session not found"));
-        authorize(requesterEmail, session);
-        if (session.getStatus() != SessionStatus.SCHEDULED) {
+        User requester = authorize(requesterEmail, session);
+        boolean noteUpdate = request.evaluationNotes() != null;
+        boolean completion = request.status() == SessionStatus.COMPLETED;
+
+        if (noteUpdate || completion) {
+            requireMentorOrAdmin(requesterEmail, requester, session);
+        }
+
+        boolean schedulingUpdate = request.startTime() != null
+            || request.description() != null
+            || request.status() == SessionStatus.CANCELED
+            || completion;
+        if (schedulingUpdate && session.getStatus() != SessionStatus.SCHEDULED) {
             throw new SessionConflictException("Only scheduled sessions can be updated");
         }
 
@@ -181,6 +193,8 @@ public class SessionService {
             session.cancel();
         } else if (request.status() == SessionStatus.COMPLETED) {
             session.complete(request.evaluationNotes());
+        } else if (noteUpdate) {
+            session.updateEvaluationNotes(request.evaluationNotes());
         }
         try {
             reviewSessionRepository.saveAndFlush(session);
@@ -199,14 +213,23 @@ public class SessionService {
         }
     }
 
-    private void authorize(String requesterEmail, ReviewSession session) {
+    private User authorize(String requesterEmail, ReviewSession session) {
         User requester = userRepository.findByEmail(requesterEmail)
             .orElseThrow(() -> new SessionNotFoundException("User not found"));
         boolean owns = session.getStudent().getUser().getEmail().equals(requesterEmail)
             || session.getMentor().getUser().getEmail().equals(requesterEmail)
-            || requester.getRole() == com.pentastack.skillsync.model.Role.ADMIN;
+            || requester.getRole() == Role.ADMIN;
         if (!owns) {
             throw new SessionAccessDeniedException("You do not have access to this session");
+        }
+        return requester;
+    }
+
+    private void requireMentorOrAdmin(String requesterEmail, User requester, ReviewSession session) {
+        boolean canEvaluate = session.getMentor().getUser().getEmail().equals(requesterEmail)
+            || requester.getRole() == Role.ADMIN;
+        if (!canEvaluate) {
+            throw new SessionAccessDeniedException("Only the mentor or an admin can add evaluation notes");
         }
     }
 

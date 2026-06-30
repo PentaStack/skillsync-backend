@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pentastack.skillsync.model.MentorProfile;
 import com.pentastack.skillsync.model.Role;
+import com.pentastack.skillsync.domain.ReviewSession;
 import com.pentastack.skillsync.domain.SessionStatus;
 import com.pentastack.skillsync.domain.Stack;
 import com.pentastack.skillsync.model.StudentProfile;
@@ -108,6 +109,7 @@ class SessionControllerIntegrationTest {
     }
 
     private MentorProfile mentor;
+    private MentorProfile otherMentor;
     private StudentProfile student;
     private StudentProfile otherStudent;
     private LocalDateTime firstSlot;
@@ -137,6 +139,22 @@ class SessionControllerIntegrationTest {
                 .available(true)
                 .averageRating(4.8)
                 .hourlyRate(BigDecimal.valueOf(60))
+                .build()
+        );
+
+        User otherMentorUser = userRepository.save(
+            User.builder().email("other.mentor@skillsync.dev").passwordHash("hash").role(Role.MENTOR).build()
+        );
+        otherMentor = mentorProfileRepository.save(
+            MentorProfile.builder()
+                .user(otherMentorUser)
+                .stack(stack)
+                .name("Other Mentor")
+                .title("Backend Mentor")
+                .bio("Helps students debug backend systems")
+                .available(true)
+                .averageRating(4.7)
+                .hourlyRate(BigDecimal.valueOf(70))
                 .build()
         );
 
@@ -292,6 +310,52 @@ class SessionControllerIntegrationTest {
         mockMvc.perform(get("/api/sessions/{id}/audit-log", otherSessionId)
                 .with(user("student@skillsync.dev").roles("STUDENT")))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void mentorOnlySeesOwnSessions() throws Exception {
+        ReviewSession ownSession = reviewSessionRepository.saveAndFlush(
+            new ReviewSession(mentor, student, firstSlot, "Own mentor review")
+        );
+        reviewSessionRepository.saveAndFlush(
+            new ReviewSession(otherMentor, student, firstSlot, "Other mentor review")
+        );
+
+        mockMvc.perform(get("/api/sessions")
+                .with(user("mentor@skillsync.dev").roles("MENTOR")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(ownSession.getId()))
+            .andExpect(jsonPath("$[0].mentorName").value("Mona Mentor"));
+    }
+
+    @Test
+    void studentCannotWriteEvaluationNotes() throws Exception {
+        long sessionId = bookAsStudent("student@skillsync.dev", firstSlot, "Review my PR");
+
+        mockMvc.perform(put("/api/sessions/{id}", sessionId)
+                .with(user("student@skillsync.dev").roles("STUDENT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "evaluationNotes", "Student should not write mentor notes"
+                ))))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("Only the mentor or an admin can add evaluation notes"));
+    }
+
+    @Test
+    void mentorCanSaveEvaluationNotesBeforeCompletion() throws Exception {
+        long sessionId = bookAsStudent("student@skillsync.dev", firstSlot, "Review my PR");
+
+        mockMvc.perform(put("/api/sessions/{id}", sessionId)
+                .with(user("mentor@skillsync.dev").roles("MENTOR"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "evaluationNotes", "Draft feedback before completion"
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("SCHEDULED"))
+            .andExpect(jsonPath("$.evaluationNotes").value("Draft feedback before completion"));
     }
 
     @Test
