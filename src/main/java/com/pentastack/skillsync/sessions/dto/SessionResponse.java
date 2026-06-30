@@ -14,5 +14,6 @@ public record SessionResponse(
     String description,
     SessionStatus status,
     String evaluationNotes,
+    String meetingLink,
     SessionAuditLogResponse audit
 ) {}

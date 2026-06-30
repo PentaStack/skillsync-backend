@@ -50,6 +50,9 @@ public class ReviewSession {
     @OneToOne(mappedBy = "session", fetch = FetchType.LAZY)
     private SessionAuditLog auditLog;
 
+    @Column(name = "meeting_link", length = 255)
+    private String meetingLink;
+
     protected ReviewSession() {}
 
     public ReviewSession(MentorProfile mentor, StudentProfile student, LocalDateTime startTime, String description) {
@@ -59,6 +62,7 @@ public class ReviewSession {
         this.endTime = startTime.plusMinutes(45);
         this.description = description;
         this.status = SessionStatus.SCHEDULED;
+        this.meetingLink = "https://meet.jit.si/skillsync-session-" + java.util.UUID.randomUUID().toString();
     }
 
     public Long getId() { return id; }
@@ -70,6 +74,7 @@ public class ReviewSession {
     public SessionStatus getStatus() { return status; }
     public String getEvaluationNotes() { return evaluationNotes; }
     public SessionAuditLog getAuditLog() { return auditLog; }
+    public String getMeetingLink() { return meetingLink; }
 
     public void cancel() { this.status = SessionStatus.CANCELED; }
     public void complete(String notes) {
